@@ -16,7 +16,7 @@ class TestOpenAPI:
 
     def test_endpoints_documentados(self, client: TestClient) -> None:
         paths = client.get("/openapi.json").json()["paths"]
-        assert set(paths) == {"/seats", "/holds", "/confirms", "/cancels", "/users/{user_id}/seats"}
+        assert set(paths) == {"/seats", "/holds", "/confirms", "/users/{user_id}/seats"}
 
     def test_modelos_documentados(self, client: TestClient) -> None:
         components = client.get("/openapi.json").json()["components"]["schemas"]

@@ -222,7 +222,7 @@ return cancelled
 """
 
 
-@app.post("/cancels", response_model=UserSeatsOut)
+@app.delete("/confirms", response_model=UserSeatsOut)
 def cancel_confirmed(request: CancelRequest) -> Any:
     numbers = set(request.seat_numbers)
     invalid = sorted(numbers - set(SEAT_RANGE))

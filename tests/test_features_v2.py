@@ -9,7 +9,7 @@ class TestCancel:
     def test_cancelar_confirmado_libera_assento(self, client: TestClient, hold) -> None:
         token, _ = hold([3], "alice")
         client.post("/confirms", json={"token": token, "user_id": "alice"})
-        res = client.post("/cancels", json={"seat_numbers": [3], "user_id": "alice"})
+        res = client.request("DELETE", "/confirms", json={"seat_numbers": [3], "user_id": "alice"})
         assert res.status_code == 200
         seat = next(s for s in client.get("/seats").json() if s["number"] == 3)
         assert seat["status"] == "available"
@@ -17,33 +17,33 @@ class TestCancel:
     def test_cancelar_confirmado_permite_novo_hold(self, client: TestClient, hold) -> None:
         token, _ = hold([3], "alice")
         client.post("/confirms", json={"token": token, "user_id": "alice"})
-        client.post("/cancels", json={"seat_numbers": [3], "user_id": "alice"})
+        client.request("DELETE", "/confirms", json={"seat_numbers": [3], "user_id": "alice"})
         res = client.post("/holds", json={"seat_numbers": [3], "user_id": "bob"})
         assert res.status_code == 201
 
     def test_cancelar_assento_de_outro_usuario_404(self, client: TestClient, hold) -> None:
         token, _ = hold([4], "alice")
         client.post("/confirms", json={"token": token, "user_id": "alice"})
-        res = client.post("/cancels", json={"seat_numbers": [4], "user_id": "bob"})
+        res = client.request("DELETE", "/confirms", json={"seat_numbers": [4], "user_id": "bob"})
         assert res.status_code == 404
 
     def test_cancelar_assento_nao_confirmado_404(self, client: TestClient, hold) -> None:
         hold([5], "alice")  # held, não confirmado
-        res = client.post("/cancels", json={"seat_numbers": [5], "user_id": "alice"})
+        res = client.request("DELETE", "/confirms", json={"seat_numbers": [5], "user_id": "alice"})
         assert res.status_code == 404
 
     def test_cancelar_assento_disponivel_404(self, client: TestClient) -> None:
-        res = client.post("/cancels", json={"seat_numbers": [7], "user_id": "alice"})
+        res = client.request("DELETE", "/confirms", json={"seat_numbers": [7], "user_id": "alice"})
         assert res.status_code == 404
 
     def test_cancelar_fora_do_range_400(self, client: TestClient) -> None:
-        res = client.post("/cancels", json={"seat_numbers": [21], "user_id": "alice"})
+        res = client.request("DELETE", "/confirms", json={"seat_numbers": [21], "user_id": "alice"})
         assert res.status_code == 400
 
     def test_cancelar_varios_de_uma_vez(self, client: TestClient, hold) -> None:
         token, _ = hold([1, 2, 3], "alice")
         client.post("/confirms", json={"token": token, "user_id": "alice"})
-        res = client.post("/cancels", json={"seat_numbers": [1, 3], "user_id": "alice"})
+        res = client.request("DELETE", "/confirms", json={"seat_numbers": [1, 3], "user_id": "alice"})
         assert res.status_code == 200
         statuses = {s["number"]: s["status"] for s in client.get("/seats").json()}
         assert statuses[1] == statuses[3] == "available"

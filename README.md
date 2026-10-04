@@ -41,7 +41,7 @@ python3 -m venv .venv
 | GET    | `/seats`              | 200     | —                            |
 | POST   | `/holds`              | 201     | 400 fora do range, 409 conflito, 422 body |
 | POST   | `/confirms`           | 200     | 404 token inválido/expirado, 422 body |
-| POST   | `/cancels`            | 200     | 400 fora do range, 404 não confirmado/outra pessoa |
+| DELETE | `/confirms`           | 200     | 400 fora do range, 404 não confirmado/outra pessoa |
 | GET    | `/users/{id}/seats`   | 200     | —                            |
 
 ## Fluxo completo (curl)
@@ -110,13 +110,13 @@ curl -s -X POST localhost:8000/confirms -H 'Content-Type: application/json' \
 curl -s localhost:8000/users/alice/seats
 
 # 11) Cancelar confirmado: alice libera o 4 e ele volta a available
-curl -s -X POST localhost:8000/cancels \
+curl -s -X DELETE localhost:8000/confirms \
   -H 'Content-Type: application/json' -d '{"seat_numbers": [4], "user_id": "alice"}'
 curl -s localhost:8000/seats | python3 -c \
   "import sys,json;print(next(s for s in json.load(sys.stdin) if s['number']==4)['status'])"  # available
 
 # 12) Cancelar assento confirmado de outra pessoa → 404
-curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:8000/cancels \
+curl -s -o /dev/null -w '%{http_code}\n' -X DELETE localhost:8000/confirms \
   -H 'Content-Type: application/json' -d '{"seat_numbers": [1], "user_id": "bob"}'
 ```
 
